@@ -1,11 +1,12 @@
 # setup
 import curses
+from py_expression_eval import Parser # thanks to Vera Mazhuga
 from curses import wrapper # play nice
 ################
 # Variables
 default_items = ['main','quit','test','clear','graph','draw']
 draw_menu = ['draw','quit','line','v_line','h_line','box','clear']
-graph_menu = ['graph','quit','test','clear',]
+graph_menu = ['graph','quit','test','func','clear',]
 DEFAULT_CHAR = 'X'
 ################
 
@@ -34,6 +35,7 @@ class Curse():
 			curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK)
 		self.grapher = Grapher(self.stdscr,self.WIDTH,self.HEIGHT)
 		self.painter = Painter(self.stdscr,self.WIDTH,self.HEIGHT)
+		self.parser = Parser()
 
 	def clear(self):
 		self.stdscr.clear()
@@ -98,6 +100,11 @@ class Curse():
 				xs = [x for x in range(0,self.WIDTH)]
 				ys = [x**2//(self.WIDTH**2//self.HEIGHT+1) for x in xs]
 				self.grapher.plot(xs,ys,col=3)
+			elif c == ord('f'):
+				fx = self.prompt('f(x)?',lambda x: True)
+				expr = self.parser.parse(fx)
+				print(expr.variables())
+
 			elif c == ord('c'):
 				self.clear()
 				self.grapher.border()

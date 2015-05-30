@@ -1,5 +1,6 @@
 # setup
 import curses
+import time
 from py_expression_eval import Parser # thanks to Vera Mazhuga
 from curses import wrapper # play nice
 ################
@@ -87,6 +88,35 @@ class Curse():
 				curses.noecho()
 				curses.curs_set(False)
 				return s
+
+	def func_prompt(self,text="f(x) = "):
+		while True:
+			self.bottom.clear()
+			self.bottom.move(0,1)
+			self.bottom.addstr(text)
+			curses.curs_set(True)
+			curses.echo()
+			fx = self.bottom.getstr(0,len(text)+2).decode(encoding="utf-8")
+			if fx == 'q':
+				return None
+			try:
+				expr = self.parser.parse(fx)
+				if expr.variables() == ['x']:
+					curses.noecho()
+					curses.curs_set(False)
+					return expr
+			except:
+				for _ in range(2):
+					self.bottom.clear()
+					self.bottom.move(0,1)
+					self.bottom.addstr('TRY AGAIN',curses.A_STANDOUT)	
+					time.sleep(.1)	
+					self.bottom.clear()
+					self.bottom.move(0,1)	
+					self.bottom.addstr('TRY AGAIN')		
+					time.sleep(.1)	
+
+
 	def graph(self):
 		self.stdscr.clear()
 		self.bar(graph_menu)
@@ -101,9 +131,13 @@ class Curse():
 				ys = [x**2//(self.WIDTH**2//self.HEIGHT+1) for x in xs]
 				self.grapher.plot(xs,ys,col=3)
 			elif c == ord('f'):
-				fx = self.prompt('f(x)?',lambda x: True)
-				expr = self.parser.parse(fx)
-				print(expr.variables())
+				fx = self.func_prompt()
+				self.bar(graph_menu)
+				if fx is not None:
+					# graph the function
+					xs = [x for x in range(0,self.WIDTH)]
+					ys = [int(fx.evaluate({'x': x})) for x in xs]
+					self.grapher.plot(xs,ys,col=4)
 
 			elif c == ord('c'):
 				self.clear()
@@ -197,7 +231,7 @@ class Grapher():
 		else:
 			tups = []
 			for x,y in zip(xs,ys):
-				if x < self.maxx and x >= self.minx and y < self.maxy and y >= self.miny:
+				if x < self.maxx  and x >= self.minx:
 					tups.append((self.maxy-y,x+1))
 				self.painter.points(tups,c,col)
 				#self.stdscr.move(self.maxy-y,x+1)
@@ -221,10 +255,10 @@ class Painter():
 			return False
 	
 	def check_y(self,y):
-		return y < self.H
+		return y < self.H 
 	
 	def check_x(self,x):
-		return x < self.W
+		return x < self.W 
 	
 	def points(self,tup,c=DEFAULT_CHAR,col=1): # connect list of tuples of points :^)
 		for i in range(len(tup)-1):
@@ -250,8 +284,9 @@ class Painter():
 				if ax > ay:
 					d = ay - ax // 2
 					while True:
-						self.stdscr.move(y,x)
-						self.stdscr.addch(c,curses.color_pair(col))
+						if y > 0: # hacky, will need to change so that never collide with border of graph
+							self.stdscr.move(y,x)
+							self.stdscr.addch(c,curses.color_pair(col))
 						if x == end_x: return
 						if d >= 0:
 							y += sy
@@ -261,8 +296,9 @@ class Painter():
 				else:
 					d = ax - ay // 2
 					while True:
-						self.stdscr.move(y,x)
-						self.stdscr.addch(c,curses.color_pair(col))
+						if y > 0:
+							self.stdscr.move(y,x)
+							self.stdscr.addch(c,curses.color_pair(col))
 						if y == end_y: return
 						if d >= 0:
 							x += sx

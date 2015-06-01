@@ -7,7 +7,7 @@ from curses import wrapper # play nice
 # Variables
 default_items = ['main','quit','test','clear','graph','draw']
 draw_menu = ['draw','quit','line','v_line','h_line','box','clear']
-graph_menu = ['graph','quit','test','func','clear',]
+graph_menu = ['graph','quit','func','clear',]
 DEFAULT_CHAR = 'X'
 ################
 
@@ -37,6 +37,8 @@ class Curse():
 		self.grapher = Grapher(self.stdscr,self.WIDTH,self.HEIGHT)
 		self.painter = Painter(self.stdscr,self.WIDTH,self.HEIGHT)
 		self.parser = Parser()
+		self.command_hist = []
+		self.command_indx = -1
 
 	def clear(self):
 		self.stdscr.clear()
@@ -90,15 +92,17 @@ class Curse():
 				return s
 
 	def func_prompt(self,text="f(x) = "):
+		self.bottom.clear()
+		self.bottom.move(0,1)
+		self.bottom.addstr(text)
+		curses.curs_set(True)
+		curses.echo()
 		while True:
-			self.bottom.clear()
-			self.bottom.move(0,1)
-			self.bottom.addstr(text)
-			curses.curs_set(True)
-			curses.echo()
 			fx = self.bottom.getstr(0,len(text)+2).decode(encoding="utf-8")
 			if fx == 'q':
 				return None
+			self.command_hist.append(fx)
+			self.command_indx += 1
 			try:
 				expr = self.parser.parse(fx)
 				if expr.variables() == ['x']:
@@ -109,13 +113,18 @@ class Curse():
 				for _ in range(2):
 					self.bottom.clear()
 					self.bottom.move(0,1)
-					self.bottom.addstr('TRY AGAIN',curses.A_STANDOUT)	
+					self.bottom.addstr('TRY AGAIN ',curses.A_STANDOUT)	
+					self.bottom.refresh()
 					time.sleep(.1)	
 					self.bottom.clear()
 					self.bottom.move(0,1)	
-					self.bottom.addstr('TRY AGAIN')		
+					self.bottom.addstr('TRY AGAIN ')
 					time.sleep(.1)	
+					self.bottom.refresh()		
 
+
+	def func_hist(self,up_down): # 0 is up, 1 is down
+		print(no)
 
 	def graph(self):
 		self.stdscr.clear()
@@ -125,11 +134,11 @@ class Curse():
 			c = self.stdscr.getch()
 			if c == ord('g'):
 				self.grapher.border()
-			elif c == ord('t'):
-				#self.grapher.plot([0,1,2,3,4,5,6,7,8,9,10,11],[0,1,2,3,4,5,6,7,8,9,10,11],col=2)
-				xs = [x for x in range(0,self.WIDTH)]
-				ys = [x**2//(self.WIDTH**2//self.HEIGHT+1) for x in xs]
-				self.grapher.plot(xs,ys,col=3)
+			#elif c == ord('t'):
+			#	#self.grapher.plot([0,1,2,3,4,5,6,7,8,9,10,11],[0,1,2,3,4,5,6,7,8,9,10,11],col=2)
+			#	xs = [x for x in range(0,self.WIDTH)]
+			#	ys = [x**2//(self.WIDTH**2//self.HEIGHT+1) for x in xs]
+			#	self.grapher.plot(xs,ys,col=3)
 			elif c == ord('f'):
 				fx = self.func_prompt()
 				self.bar(graph_menu)
@@ -147,6 +156,17 @@ class Curse():
 				self.bottom.clear()
 				self.bar(default_items)
 				break
+			elif c == curses.KEY_UP:
+				# go up
+				if self.command_indx < len(self.command_hist) and self.command_indx >= 0:
+					self.bottom.addstr(self.command_hist[self.command_indx])
+					self.command_indx -= 1
+			elif c == curses.KEY_DOWN:
+				# go down
+				self.command_indx += 1
+				if self.command_indx < len(self.command_hist):
+					self.bottom.addstr(self.command_hist[self.command_indx])
+
 
 	def draw(self):
 		#self.stdscr.clear()

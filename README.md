@@ -1,8 +1,6 @@
 #curses calc
 simple curses graphic calculator
-##todo
-- add interpreter for functions
-- allow for resizing
+has interpreter for functions
 
 why would you ever use this?
 

@@ -1,6 +1,5 @@
 #curses calc
-simple curses graphic calculator
-has interpreter for functions
+simple curses graphic calculator with fxn input
 
 why would you ever use this?
 
